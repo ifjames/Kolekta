@@ -53,6 +53,12 @@ def firebase_auth():
     session['user_id'] = user.id
     return jsonify({'success': True})
 
+@app.route('/login')
+def login():
+    if is_authenticated():
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)

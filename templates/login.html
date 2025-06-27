@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Kolekta{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card glass-effect">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <h1 class="gradient-text">Kolekta</h1>
+                <p>Real-time cash exchange platform</p>
+            </div>
+        </div>
+        
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="showLogin()">Sign In</button>
+            <button class="auth-tab" onclick="showRegister()">Sign Up</button>
+        </div>
+        
+        <!-- Login Form -->
+        <div id="loginForm" class="auth-form">
+            <form id="loginFormElement">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Enter your password">
+                </div>
+                
+                <button type="submit" class="auth-button">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+            
+            <button id="googleSignInButton" class="google-button">
+                <i class="fab fa-google"></i>
+                Sign in with Google
+            </button>
+            
+            <div class="auth-links">
+                <a href="#" onclick="showForgotPassword()">Forgot your password?</a>
+            </div>
+        </div>
+        
+        <!-- Register Form -->
+        <div id="registerForm" class="auth-form" style="display: none;">
+            <form id="registerFormElement">
+                <div class="form-group">
+                    <label for="registerName">Full Name</label>
+                    <input type="text" id="registerName" required placeholder="Enter your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" required placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" required placeholder="Choose a password" minlength="6">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" required placeholder="Confirm your password">
+                </div>
+                
+                <button type="submit" class="auth-button">
+                    <i class="fas fa-user-plus"></i>
+                    Create Account
+                </button>
+            </form>
+            
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+            
+            <button id="googleSignUpButton" class="google-button">
+                <i class="fab fa-google"></i>
+                Sign up with Google
+            </button>
+        </div>
+        
+        <!-- Forgot Password Form -->
+        <div id="forgotPasswordForm" class="auth-form" style="display: none;">
+            <div class="auth-back">
+                <button onclick="showLogin()" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Sign In
+                </button>
+            </div>
+            
+            <form id="forgotPasswordFormElement">
+                <div class="form-group">
+                    <label for="forgotEmail">Email</label>
+                    <input type="email" id="forgotEmail" required placeholder="Enter your email">
+                </div>
+                
+                <button type="submit" class="auth-button">
+                    <i class="fas fa-paper-plane"></i>
+                    Send Reset Link
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.auth-tab.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.auth-form {
+    animation: fadeIn 0.3s ease;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.875rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    font-size: 1rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.form-group input::placeholder {
+    color: var(--text-secondary);
+}
+
+.auth-button {
+    width: 100%;
+    padding: 0.875rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.auth-button:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.google-button {
+    width: 100%;
+    padding: 0.875rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.google-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.auth-divider {
+    margin: 1.5rem 0;
+    text-align: center;
+    position: relative;
+}
+
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.auth-divider span {
+    background: var(--bg-color);
+    padding: 0 1rem;
+    color: var(--text-secondary);
+    position: relative;
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.auth-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+.auth-back {
+    margin-bottom: 1.5rem;
+}
+
+.back-button {
+    border: none;
+    background: transparent;
+    color: var(--primary-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.back-button:hover {
+    text-decoration: underline;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .auth-container {
+        padding: 1rem;
+    }
+    
+    .auth-card {
+        padding: 1.5rem;
+    }
+}
+</style>
+
+<script>
+function showLogin() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotPasswordForm').style.display = 'none';
+    
+    document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.auth-tab')[0].classList.add('active');
+}
+
+function showRegister() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('forgotPasswordForm').style.display = 'none';
+    
+    document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.auth-tab')[1].classList.add('active');
+}
+
+function showForgotPassword() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotPasswordForm').style.display = 'block';
+}
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script type="module">
+    import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+    
+    const auth = window.firebaseAuth?.auth;
+    const provider = new GoogleAuthProvider();
+    
+    if (!auth) {
+        console.error('Firebase auth not initialized');
+    }
+    
+    // Login form handler
+    document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            await sendUserToServer(userCredential.user);
+        } catch (error) {
+            alert('Login failed: ' + error.message);
+        }
+    });
+    
+    // Register form handler
+    document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        
+        if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
+        
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await sendUserToServer(userCredential.user, name);
+        } catch (error) {
+            alert('Registration failed: ' + error.message);
+        }
+    });
+    
+    // Forgot password form handler
+    document.getElementById('forgotPasswordFormElement').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('forgotEmail').value;
+        
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert('Password reset email sent! Check your inbox.');
+            showLogin();
+        } catch (error) {
+            alert('Failed to send reset email: ' + error.message);
+        }
+    });
+    
+    // Google sign-in handlers
+    document.getElementById('googleSignInButton').addEventListener('click', () => {
+        signInWithRedirect(auth, provider);
+    });
+    
+    document.getElementById('googleSignUpButton').addEventListener('click', () => {
+        signInWithRedirect(auth, provider);
+    });
+    
+    // Handle redirect result
+    getRedirectResult(auth).then((result) => {
+        if (result && result.user) {
+            sendUserToServer(result.user);
+        }
+    }).catch((error) => {
+        console.error('Google auth error:', error);
+        alert('Google authentication failed: ' + error.message);
+    });
+    
+    async function sendUserToServer(user, displayName = null) {
+        try {
+            const response = await fetch('/firebase-auth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: displayName || user.displayName,
+                    photoURL: user.photoURL
+                })
+            });
+            
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                throw new Error('Server authentication failed');
+            }
+        } catch (error) {
+            console.error('Server auth error:', error);
+            alert('Authentication failed. Please try again.');
+        }
+    }
+</script>
+{% endblock %}

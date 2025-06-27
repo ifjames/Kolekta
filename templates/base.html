@@ -152,7 +152,7 @@
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
-        import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+        import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
 
         const firebaseConfig = {
             apiKey: "{{ firebase_api_key }}",
@@ -166,46 +166,13 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
 
         // Make functions available globally
         window.firebaseAuth = {
-            signInWithGoogle: () => {
-                console.log('Attempting Google sign-in...');
-                return signInWithRedirect(auth, provider).catch((error) => {
-                    console.error('Sign in error:', error);
-                    alert('Authentication error: ' + error.message);
-                });
-            },
+            auth: auth,
             signOut: () => signOut(auth),
-            onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
-            getRedirectResult: () => getRedirectResult(auth)
+            onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback)
         };
-
-        // Handle redirect result on page load
-        window.firebaseAuth.getRedirectResult().then((result) => {
-            if (result && result.user) {
-                // Send user data to server
-                fetch('/firebase-auth', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        uid: result.user.uid,
-                        email: result.user.email,
-                        displayName: result.user.displayName,
-                        photoURL: result.user.photoURL
-                    })
-                }).then(response => {
-                    if (response.ok) {
-                        window.location.href = '/';
-                    }
-                });
-            }
-        }).catch((error) => {
-            console.error('Firebase auth error:', error);
-        });
 
         // Add login button functionality
         document.addEventListener('DOMContentLoaded', function() {
@@ -214,15 +181,13 @@
             
             if (loginButton) {
                 loginButton.addEventListener('click', function() {
-                    console.log('Login button clicked');
-                    window.firebaseAuth.signInWithGoogle();
+                    window.location.href = '/login';
                 });
             }
             
             if (ctaLoginButton) {
                 ctaLoginButton.addEventListener('click', function() {
-                    console.log('CTA Login button clicked');
-                    window.firebaseAuth.signInWithGoogle();
+                    window.location.href = '/login';
                 });
             }
         });
