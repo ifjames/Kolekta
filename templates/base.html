@@ -170,7 +170,13 @@
 
         // Make functions available globally
         window.firebaseAuth = {
-            signInWithGoogle: () => signInWithRedirect(auth, provider),
+            signInWithGoogle: () => {
+                console.log('Attempting Google sign-in...');
+                return signInWithRedirect(auth, provider).catch((error) => {
+                    console.error('Sign in error:', error);
+                    alert('Authentication error: ' + error.message);
+                });
+            },
             signOut: () => signOut(auth),
             onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
             getRedirectResult: () => getRedirectResult(auth)
@@ -208,12 +214,14 @@
             
             if (loginButton) {
                 loginButton.addEventListener('click', function() {
+                    console.log('Login button clicked');
                     window.firebaseAuth.signInWithGoogle();
                 });
             }
             
             if (ctaLoginButton) {
                 ctaLoginButton.addEventListener('click', function() {
+                    console.log('CTA Login button clicked');
                     window.firebaseAuth.signInWithGoogle();
                 });
             }
