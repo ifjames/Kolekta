@@ -1,28 +1,57 @@
+import os
 from flask import render_template, request, jsonify, flash, redirect, url_for, session
-from app import app
+from app import app, db
+from models import User
 
-# Simple authentication helpers
+# Authentication helpers
 def is_authenticated():
     return 'user_id' in session
 
 def get_current_user():
     if 'user_id' in session:
-        return {
-            'id': 'demo-user',
-            'first_name': 'Demo',
-            'last_name': 'User',
-            'email': 'demo@kolekta.com',
-            'trust_score': 4.8,
-            'profile_image_url': None
-        }
+        user = User.query.get(session['user_id'])
+        if user:
+            return {
+                'id': user.id,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'trust_score': user.trust_score,
+                'profile_image_url': user.profile_image_url
+            }
     return None
 
-# Demo login
-@app.route('/demo-login')
-def demo_login():
-    session['user_id'] = 'demo-user'
-    flash('Logged in as demo user!', 'success')
-    return redirect(url_for('index'))
+# Firebase authentication
+@app.route('/firebase-auth', methods=['POST'])
+def firebase_auth():
+    data = request.get_json()
+    
+    if not data or 'uid' not in data:
+        return jsonify({'error': 'Invalid request'}), 400
+    
+    # Check if user exists
+    user = User.query.get(data['uid'])
+    
+    if not user:
+        # Create new user
+        name_parts = (data.get('displayName') or '').split(' ', 1)
+        first_name = name_parts[0] if name_parts else ''
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+        
+        user = User()
+        user.id = data['uid']
+        user.email = data.get('email')
+        user.first_name = first_name
+        user.last_name = last_name
+        user.profile_image_url = data.get('photoURL')
+        user.is_verified = True  # Firebase users are considered verified
+        
+        db.session.add(user)
+        db.session.commit()
+    
+    # Log in user
+    session['user_id'] = user.id
+    return jsonify({'success': True})
 
 @app.route('/logout')
 def logout():
@@ -236,7 +265,12 @@ def api_check_notifications():
         'notifications': []
     })
 
-# Add context processor to make current_user available in all templates
+# Add context processor to make current_user and Firebase config available in all templates
 @app.context_processor
 def inject_user():
-    return {'current_user': get_current_user()}
+    return {
+        'current_user': get_current_user(),
+        'firebase_api_key': os.environ.get('FIREBASE_API_KEY'),
+        'firebase_project_id': os.environ.get('FIREBASE_PROJECT_ID'),
+        'firebase_app_id': os.environ.get('FIREBASE_APP_ID')
+    }

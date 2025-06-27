@@ -84,7 +84,7 @@
                             My Requests
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="{{ url_for('logout') }}" class="dropdown-item">
+                        <a href="#" onclick="logoutUser()" class="dropdown-item">
                             <i class="fas fa-sign-out-alt"></i>
                             Logout
                         </a>
@@ -149,6 +149,87 @@
     </div>
     {% endif %}
     
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
+        import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "{{ firebase_api_key }}",
+            authDomain: "{{ firebase_project_id }}.firebaseapp.com",
+            projectId: "{{ firebase_project_id }}",
+            storageBucket: "{{ firebase_project_id }}.firebasestorage.app",
+            messagingSenderId: "158152413445",
+            appId: "{{ firebase_app_id }}"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Make functions available globally
+        window.firebaseAuth = {
+            signInWithGoogle: () => signInWithRedirect(auth, provider),
+            signOut: () => signOut(auth),
+            onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
+            getRedirectResult: () => getRedirectResult(auth)
+        };
+
+        // Handle redirect result on page load
+        window.firebaseAuth.getRedirectResult().then((result) => {
+            if (result && result.user) {
+                // Send user data to server
+                fetch('/firebase-auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        uid: result.user.uid,
+                        email: result.user.email,
+                        displayName: result.user.displayName,
+                        photoURL: result.user.photoURL
+                    })
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/';
+                    }
+                });
+            }
+        }).catch((error) => {
+            console.error('Firebase auth error:', error);
+        });
+
+        // Add login button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginButton = document.getElementById('loginButton');
+            const ctaLoginButton = document.getElementById('ctaLoginButton');
+            
+            if (loginButton) {
+                loginButton.addEventListener('click', function() {
+                    window.firebaseAuth.signInWithGoogle();
+                });
+            }
+            
+            if (ctaLoginButton) {
+                ctaLoginButton.addEventListener('click', function() {
+                    window.firebaseAuth.signInWithGoogle();
+                });
+            }
+        });
+
+        // Global logout function
+        window.logoutUser = function() {
+            window.firebaseAuth.signOut().then(() => {
+                window.location.href = '/logout';
+            }).catch((error) => {
+                console.error('Sign out error:', error);
+                window.location.href = '/logout';
+            });
+        };
+    </script>
+
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
