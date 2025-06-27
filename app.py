@@ -29,9 +29,6 @@ db = SQLAlchemy(model_class=Base)
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
-with app.app_context():
-    # Make sure to import the models here or their tables won't be created
-    import models  # noqa: F401
-    import simple_routes  # noqa: F401
-    db.create_all()
-    logging.info("Database tables created")
+# Import routes
+import simple_routes  # noqa: F401
+logging.info("Application initialized with Firestore backend")

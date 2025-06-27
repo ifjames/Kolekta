@@ -1,7 +1,7 @@
 import os
 from flask import render_template, request, jsonify, flash, redirect, url_for, session
-from app import app, db
-from models import User
+from app import app
+from firestore_models import User, ExchangeRequest, ExchangeMatch, Notification
 
 # Authentication helpers
 def is_authenticated():
@@ -9,7 +9,7 @@ def is_authenticated():
 
 def get_current_user():
     if 'user_id' in session:
-        user = User.query.get(session['user_id'])
+        user = User.get(session['user_id'])
         if user:
             return {
                 'id': user.id,
@@ -30,7 +30,7 @@ def firebase_auth():
         return jsonify({'error': 'Invalid request'}), 400
     
     # Check if user exists
-    user = User.query.get(data['uid'])
+    user = User.get(data['uid'])
     
     if not user:
         # Create new user
@@ -38,16 +38,16 @@ def firebase_auth():
         first_name = name_parts[0] if name_parts else ''
         last_name = name_parts[1] if len(name_parts) > 1 else ''
         
-        user = User()
-        user.id = data['uid']
-        user.email = data.get('email')
-        user.first_name = first_name
-        user.last_name = last_name
-        user.profile_image_url = data.get('photoURL')
-        user.is_verified = True  # Firebase users are considered verified
+        user_data = {
+            'id': data['uid'],
+            'email': data.get('email'),
+            'first_name': first_name,
+            'last_name': last_name,
+            'profile_image_url': data.get('photoURL'),
+            'is_verified': True  # Firebase users are considered verified
+        }
         
-        db.session.add(user)
-        db.session.commit()
+        user = User.create(user_data)
     
     # Log in user
     session['user_id'] = user.id
@@ -69,52 +69,50 @@ def logout():
 def index():
     current_user = get_current_user()
     if current_user:
-        # Mock data for demo
+        # Get real data from Firestore
         from datetime import datetime
-        active_requests = [
-            {
-                'id': 1,
-                'have_amount': 1000,
-                'have_denomination': '1000',
-                'want_amount': 1000,
-                'want_denomination': '20',
-                'status': 'active',
-                'exchange_location_name': 'SM Mall',
-                'created_at': datetime.now(),
-                'notes': 'Need coins for jeepney fare'
-            }
-        ]
         
-        recent_matches = [
-            {
-                'id': 1,
-                'status': 'pending',
-                'distance_km': 2.5,
-                'matched_at': datetime.now(),
-                'requester_id': 'demo-user',
-                'provider': {
-                    'first_name': 'Juan',
-                    'profile_image_url': None
-                }
-            }
-        ]
+        # Get user's exchange requests
+        user_requests = ExchangeRequest.query([
+            {"field": "user_id", "operator": "==", "value": current_user['id']}
+        ])
         
-        notifications = [
-            {
-                'id': 1,
-                'title': 'New Match Found!',
-                'message': 'Someone nearby can exchange your ₱1000 for ₱20 coins',
-                'type': 'match_found',
-                'is_read': False,
-                'created_at': datetime.now()
-            }
-        ]
+        # Get user's matches
+        matches_as_requester = ExchangeMatch.query([
+            {"field": "requester_id", "operator": "==", "value": current_user['id']}
+        ])
+        matches_as_provider = ExchangeMatch.query([
+            {"field": "provider_id", "operator": "==", "value": current_user['id']}
+        ])
+        
+        recent_matches = matches_as_requester + matches_as_provider
+        recent_matches = sorted(recent_matches, key=lambda x: x.created_at or datetime.min, reverse=True)[:5]
+        
+        # Get user's notifications
+        user_notifications = Notification.query([
+            {"field": "user_id", "operator": "==", "value": current_user['id']}
+        ])
+        notifications = sorted(user_notifications, key=lambda x: x.created_at or datetime.min, reverse=True)[:5]
+        
+        # Convert to dicts for template
+        active_requests = [req.to_dict() for req in user_requests if req.status == 'active']
+        recent_matches_data = []
+        for match in recent_matches:
+            match_dict = match.to_dict()
+            # Get provider info if user is requester
+            if match.requester_id == current_user['id'] and match.provider_id:
+                provider = User.get(match.provider_id)
+                if provider:
+                    match_dict['provider'] = provider.to_dict()
+            recent_matches_data.append(match_dict)
+        
+        notifications_data = [notif.to_dict() for notif in notifications]
         
         return render_template('simple_dashboard.html', 
                              current_user=current_user,
                              active_requests=active_requests,
-                             recent_matches=recent_matches,
-                             notifications=notifications)
+                             recent_matches=recent_matches_data,
+                             notifications=notifications_data)
     else:
         return render_template('landing.html')
 
