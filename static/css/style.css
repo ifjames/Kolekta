@@ -128,17 +128,28 @@ body {
 
 /* Primary button */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+  background: var(--primary-blue);
   border: none;
   color: white;
   font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
   box-shadow: var(--shadow-md);
+  font-size: 0.95rem;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--light-blue), var(--accent-blue));
+  background: var(--light-blue);
   transform: translateY(-2px);
   box-shadow: var(--shadow-xl);
+  color: white;
+  text-decoration: none;
 }
 
 /* Navigation */

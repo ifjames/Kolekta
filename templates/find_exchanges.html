@@ -882,8 +882,8 @@ const markerCSS = `
 }
 `;
 
-const style = document.createElement('style');
-style.textContent = markerCSS;
-document.head.appendChild(style);
+const mapStyleElement = document.createElement('style');
+mapStyleElement.textContent = markerCSS;
+document.head.appendChild(mapStyleElement);
 </script>
 {% endblock %}

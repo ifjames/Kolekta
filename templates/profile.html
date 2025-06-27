@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Kolekta{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+        <p>Manage your account settings and preferences</p>
+    </div>
+    
+    <!-- Profile Content -->
+    <div class="profile-container">
+        <div class="profile-card glass-effect">
+            <div class="profile-avatar">
+                <div class="avatar-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            
+            <div class="profile-info">
+                <h2>{{ current_user.first_name or 'Demo' }} {{ current_user.last_name or 'User' }}</h2>
+                <p class="profile-email">{{ current_user.email or 'demo@kolekta.app' }}</p>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ current_user.trust_score or '5.0' }}</div>
+                        <div class="stat-label">Trust Score</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ 'Yes' if current_user.is_verified else 'No' }}</div>
+                        <div class="stat-label">Verified</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <button class="btn-primary">
+                    <i class="fas fa-edit"></i>
+                    Edit Profile
+                </button>
+                <button class="glass-btn">
+                    <i class="fas fa-shield-alt"></i>
+                    Verify Account
+                </button>
+            </div>
+        </div>
+        
+        <!-- Additional Profile Sections -->
+        <div class="profile-sections">
+            <div class="section-card glass-effect">
+                <h3><i class="fas fa-map-marker-alt"></i> Location Preferences</h3>
+                <p>Set your preferred exchange locations and safe zones</p>
+                <button class="glass-btn small">
+                    <i class="fas fa-cog"></i>
+                    Configure
+                </button>
+            </div>
+            
+            <div class="section-card glass-effect">
+                <h3><i class="fas fa-bell"></i> Notification Settings</h3>
+                <p>Manage how you receive exchange notifications</p>
+                <button class="glass-btn small">
+                    <i class="fas fa-cog"></i>
+                    Configure
+                </button>
+            </div>
+            
+            <div class="section-card glass-effect">
+                <h3><i class="fas fa-history"></i> Exchange History</h3>
+                <p>View your completed exchange transactions</p>
+                <button class="glass-btn small">
+                    <i class="fas fa-eye"></i>
+                    View History
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.page-header h1 i {
+    color: var(--accent-blue);
+    margin-right: 0.5rem;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-card {
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.profile-avatar {
+    margin-bottom: 1.5rem;
+}
+
+.avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    color: white;
+    font-size: 2rem;
+}
+
+.profile-info h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.profile-email {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.profile-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.profile-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.section-card {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.section-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.section-card h3 i {
+    color: var(--accent-blue);
+    margin-right: 0.5rem;
+}
+
+.section-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.glass-btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .profile-stats {
+        gap: 1rem;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .profile-sections {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-card {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}

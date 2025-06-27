@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Kolekta{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-bell"></i> Notifications</h1>
+        <p>Stay updated with your exchange activity and matches</p>
+    </div>
+    
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-state-content glass-effect">
+            <div class="empty-state-icon">
+                <i class="fas fa-bell-slash"></i>
+            </div>
+            <h3>No notifications yet</h3>
+            <p>You'll receive notifications when someone matches with your exchange requests or when there are updates to your transactions.</p>
+            <div class="empty-state-actions">
+                <a href="{{ url_for('request_exchange') }}" class="btn-primary">
+                    <i class="fas fa-plus-circle"></i>
+                    Create Request
+                </a>
+                <a href="{{ url_for('find_exchanges') }}" class="glass-btn">
+                    <i class="fas fa-search"></i>
+                    Browse Exchanges
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.page-header h1 i {
+    color: var(--accent-blue);
+    margin-right: 0.5rem;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.empty-state-content {
+    text-align: center;
+    max-width: 500px;
+    padding: 3rem;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: var(--accent-blue);
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+}
+
+.empty-state-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.empty-state-content p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.empty-state-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .empty-state-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .empty-state-content {
+        padding: 2rem;
+    }
+}
+</style>
+{% endblock %}

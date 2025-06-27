@@ -187,7 +187,7 @@ def matches():
     if not current_user:
         return redirect(url_for('demo_login'))
     
-    return render_template('base.html')  # Placeholder
+    return render_template('matches.html')
 
 @app.route('/notifications')
 def notifications():
@@ -195,7 +195,7 @@ def notifications():
     if not current_user:
         return redirect(url_for('demo_login'))
     
-    return render_template('base.html')  # Placeholder
+    return render_template('notifications.html')
 
 @app.route('/profile')
 def profile():
@@ -203,7 +203,7 @@ def profile():
     if not current_user:
         return redirect(url_for('demo_login'))
     
-    return render_template('base.html')  # Placeholder
+    return render_template('profile.html')
 
 @app.route('/my-requests')
 def my_requests():
@@ -211,7 +211,30 @@ def my_requests():
     if not current_user:
         return redirect(url_for('demo_login'))
     
-    return render_template('base.html')  # Placeholder
+    return render_template('my_requests.html')
+
+# API endpoints for real-time features
+@app.route('/api/check-new-matches')
+def api_check_new_matches():
+    if not is_authenticated():
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    return jsonify({
+        'has_new_matches': False,
+        'count': 0,
+        'matches': []
+    })
+
+@app.route('/api/check-notifications')
+def api_check_notifications():
+    if not is_authenticated():
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    return jsonify({
+        'has_new_notifications': False,
+        'count': 0,
+        'notifications': []
+    })
 
 # Add context processor to make current_user available in all templates
 @app.context_processor
