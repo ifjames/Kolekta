@@ -1,0 +1,732 @@
+{% extends "base.html" %}
+
+{% block title %}Request Exchange - Kolekta{% endblock %}
+
+{% block head %}
+<!-- Leaflet CSS for maps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="request-container">
+    <div class="request-header">
+        <h1><i class="fas fa-plus-circle"></i> Request Exchange</h1>
+        <p>Tell us what you have and what you need. We'll find nearby users to match with.</p>
+    </div>
+
+    <div class="request-form-container">
+        <form id="exchange-form" class="exchange-form glass-effect">
+            <!-- Exchange Details -->
+            <div class="form-section">
+                <h3><i class="fas fa-exchange-alt"></i> Exchange Details</h3>
+                
+                <div class="exchange-flow">
+                    <!-- What you have -->
+                    <div class="exchange-side">
+                        <h4>What I Have</h4>
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" id="have-amount" name="have_amount" class="form-control" 
+                                   placeholder="1000" min="1" step="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Denomination</label>
+                            <select id="have-denomination" name="have_denomination" class="form-control form-select" required>
+                                <option value="">Select denomination</option>
+                                <option value="1000">₱1000 Bill</option>
+                                <option value="500">₱500 Bill</option>
+                                <option value="200">₱200 Bill</option>
+                                <option value="100">₱100 Bill</option>
+                                <option value="50">₱50 Bill</option>
+                                <option value="20">₱20 Bill</option>
+                                <option value="10">₱10 Coin</option>
+                                <option value="5">₱5 Coin</option>
+                                <option value="1">₱1 Coin</option>
+                                <option value="coins">Mixed Coins</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="exchange-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+
+                    <!-- What you want -->
+                    <div class="exchange-side">
+                        <h4>What I Want</h4>
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" id="want-amount" name="want_amount" class="form-control" 
+                                   placeholder="1000" min="1" step="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Denomination</label>
+                            <select id="want-denomination" name="want_denomination" class="form-control form-select" required>
+                                <option value="">Select denomination</option>
+                                <option value="1000">₱1000 Bill</option>
+                                <option value="500">₱500 Bill</option>
+                                <option value="200">₱200 Bill</option>
+                                <option value="100">₱100 Bill</option>
+                                <option value="50">₱50 Bill</option>
+                                <option value="20">₱20 Bill</option>
+                                <option value="10">₱10 Coin</option>
+                                <option value="5">₱5 Coin</option>
+                                <option value="1">₱1 Coin</option>
+                                <option value="coins">Mixed Coins</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exchange Preview -->
+                <div class="exchange-preview" id="exchange-preview" style="display: none;">
+                    <div class="preview-content">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="preview-text"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Section -->
+            <div class="form-section">
+                <h3><i class="fas fa-map-marker-alt"></i> Exchange Location</h3>
+                
+                <div class="location-controls">
+                    <button type="button" id="use-location-btn" class="glass-btn">
+                        <i class="fas fa-crosshairs"></i>
+                        Use My Location
+                    </button>
+                    <div class="location-info">
+                        <span id="location-status">Click to detect your location</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Location Name (Optional)</label>
+                    <input type="text" id="location-name" name="location_name" class="form-control" 
+                           placeholder="e.g., SM Mall Entrance, Ayala Terminal">
+                </div>
+
+                <!-- Map -->
+                <div class="map-container">
+                    <div id="location-map" class="location-map"></div>
+                </div>
+
+                <!-- Hidden location inputs -->
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
+            </div>
+
+            <!-- Additional Details -->
+            <div class="form-section">
+                <h3><i class="fas fa-clipboard"></i> Additional Details</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">Notes (Optional)</label>
+                    <textarea id="notes" name="notes" class="form-control" rows="3" 
+                              placeholder="Any additional information about the exchange..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Preferred Meeting Spots</label>
+                    <div class="meeting-spots">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="safe_zones" value="malls">
+                            <span class="checkmark"></span>
+                            Shopping Malls
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="safe_zones" value="terminals">
+                            <span class="checkmark"></span>
+                            Bus/Jeep Terminals
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="safe_zones" value="convenience">
+                            <span class="checkmark"></span>
+                            Convenience Stores
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="safe_zones" value="cafes">
+                            <span class="checkmark"></span>
+                            Cafes/Restaurants
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-actions">
+                <button type="submit" class="btn-primary large" id="submit-btn">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Post Exchange Request</span>
+                    <div class="loading" id="submit-loading" style="display: none;"></div>
+                </button>
+                <a href="{{ url_for('index') }}" class="glass-btn">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+        <!-- Tips Sidebar -->
+        <div class="tips-sidebar glass-effect">
+            <h3><i class="fas fa-lightbulb"></i> Exchange Tips</h3>
+            
+            <div class="tip-item">
+                <div class="tip-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Stay Safe</h4>
+                    <p>Always meet in public places like malls, terminals, or busy streets.</p>
+                </div>
+            </div>
+
+            <div class="tip-item">
+                <div class="tip-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Be Prompt</h4>
+                    <p>Respond quickly to matches and arrive on time for exchanges.</p>
+                </div>
+            </div>
+
+            <div class="tip-item">
+                <div class="tip-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Check Bills</h4>
+                    <p>Always verify the authenticity of bills and count money carefully.</p>
+                </div>
+            </div>
+
+            <div class="tip-item">
+                <div class="tip-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="tip-content">
+                    <h4>Rate Users</h4>
+                    <p>Help build trust by rating your exchange partners after each transaction.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Request Exchange Page Styles */
+.request-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+
+.request-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.request-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.request-header p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.request-form-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+.exchange-form {
+    padding: 2rem;
+}
+
+.form-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.exchange-flow {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.exchange-side h4 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.exchange-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2rem;
+    color: var(--accent-blue);
+    font-size: 1.5rem;
+}
+
+.exchange-preview {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: var(--border-radius-small);
+}
+
+.preview-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #93C5FD;
+}
+
+.location-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.location-info {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.map-container {
+    margin-top: 1rem;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.location-map {
+    height: 300px;
+    width: 100%;
+}
+
+.meeting-spots {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: var(--border-radius-small);
+    transition: var(--transition);
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-item input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--glass-border);
+    border-radius: 4px;
+    position: relative;
+    transition: var(--transition);
+}
+
+.checkbox-item input[type="checkbox"]:checked + .checkmark {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+
+.checkbox-item input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.btn-primary.large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    position: relative;
+}
+
+.tips-sidebar {
+    padding: 2rem;
+    height: fit-content;
+    position: sticky;
+    top: 140px;
+}
+
+.tips-sidebar h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tip-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.tip-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.tip-content h4 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.tip-content p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .request-form-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .exchange-flow {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .exchange-arrow {
+        transform: rotate(90deg);
+        margin: 0;
+    }
+    
+    .meeting-spots {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .tips-sidebar {
+        position: static;
+    }
+}
+</style>
+
+<script>
+// Request Exchange JavaScript
+let map;
+let marker;
+let userLocation = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+    setupFormHandlers();
+    setupLocationDetection();
+    setupExchangePreview();
+});
+
+function initializeMap() {
+    // Initialize map centered on Philippines
+    map = L.map('location-map').setView([14.5995, 120.9842], 11);
+    
+    // Add OpenStreetMap tiles (free)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Handle map clicks
+    map.on('click', function(e) {
+        setMapLocation(e.latlng.lat, e.latlng.lng);
+    });
+}
+
+function setupLocationDetection() {
+    const useLocationBtn = document.getElementById('use-location-btn');
+    const locationStatus = document.getElementById('location-status');
+    
+    useLocationBtn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            showNotification('Geolocation is not supported by this browser', 'error');
+            return;
+        }
+        
+        locationStatus.textContent = 'Detecting location...';
+        useLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting...';
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                setMapLocation(lat, lng);
+                locationStatus.textContent = 'Location detected successfully';
+                useLocationBtn.innerHTML = '<i class="fas fa-check"></i> Location Set';
+                useLocationBtn.disabled = true;
+                
+                // Update user location in backend
+                updateUserLocation(lat, lng);
+            },
+            function(error) {
+                console.error('Location error:', error);
+                locationStatus.textContent = 'Unable to detect location. Click on map to set manually.';
+                useLocationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Location';
+                showNotification('Could not detect your location. Please click on the map to set your location.', 'warning');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    });
+}
+
+function setMapLocation(lat, lng) {
+    // Remove existing marker
+    if (marker) {
+        map.removeLayer(marker);
+    }
+    
+    // Add new marker
+    marker = L.marker([lat, lng], {
+        draggable: true
+    }).addTo(map);
+    
+    // Handle marker drag
+    marker.on('dragend', function(e) {
+        const position = e.target.getLatLng();
+        setLocationInputs(position.lat, position.lng);
+    });
+    
+    // Center map on marker
+    map.setView([lat, lng], 15);
+    
+    // Set form inputs
+    setLocationInputs(lat, lng);
+    
+    userLocation = { lat, lng };
+}
+
+function setLocationInputs(lat, lng) {
+    document.getElementById('latitude').value = lat;
+    document.getElementById('longitude').value = lng;
+}
+
+function updateUserLocation(lat, lng) {
+    fetch('/update-location', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            latitude: lat,
+            longitude: lng
+        })
+    }).catch(error => {
+        console.error('Error updating location:', error);
+    });
+}
+
+function setupExchangePreview() {
+    const haveAmount = document.getElementById('have-amount');
+    const haveDenom = document.getElementById('have-denomination');
+    const wantAmount = document.getElementById('want-amount');
+    const wantDenom = document.getElementById('want-denomination');
+    const preview = document.getElementById('exchange-preview');
+    const previewText = document.getElementById('preview-text');
+    
+    function updatePreview() {
+        if (haveAmount.value && haveDenom.value && wantAmount.value && wantDenom.value) {
+            const denomText = {
+                '1000': '₱1000 bills',
+                '500': '₱500 bills',
+                '200': '₱200 bills',
+                '100': '₱100 bills',
+                '50': '₱50 bills',
+                '20': '₱20 bills',
+                '10': '₱10 coins',
+                '5': '₱5 coins',
+                '1': '₱1 coins',
+                'coins': 'mixed coins'
+            };
+            
+            previewText.textContent = `You want to exchange ₱${haveAmount.value} in ${denomText[haveDenom.value]} for ₱${wantAmount.value} in ${denomText[wantDenom.value]}`;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+    
+    [haveAmount, haveDenom, wantAmount, wantDenom].forEach(input => {
+        input.addEventListener('change', updatePreview);
+        input.addEventListener('input', updatePreview);
+    });
+}
+
+function setupFormHandlers() {
+    const form = document.getElementById('exchange-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitLoading = document.getElementById('submit-loading');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate location
+        if (!userLocation) {
+            showNotification('Please set your exchange location on the map', 'error');
+            return;
+        }
+        
+        // Show loading
+        submitBtn.disabled = true;
+        submitLoading.style.display = 'inline-block';
+        submitBtn.querySelector('span').textContent = 'Posting Request...';
+        
+        // Collect form data
+        const formData = new FormData(form);
+        const safeZones = Array.from(form.querySelectorAll('input[name="safe_zones"]:checked'))
+            .map(cb => cb.value);
+        
+        const data = {
+            have_amount: formData.get('have_amount'),
+            have_denomination: formData.get('have_denomination'),
+            want_amount: formData.get('want_amount'),
+            want_denomination: formData.get('want_denomination'),
+            latitude: userLocation.lat,
+            longitude: userLocation.lng,
+            location_name: formData.get('location_name'),
+            notes: formData.get('notes'),
+            safe_zones: safeZones
+        };
+        
+        // Submit request
+        fetch('/create-request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showNotification('Exchange request posted successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                throw new Error(result.error || 'Failed to create request');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Failed to post request. Please try again.', 'error');
+            
+            // Reset button
+            submitBtn.disabled = false;
+            submitLoading.style.display = 'none';
+            submitBtn.querySelector('span').textContent = 'Post Exchange Request';
+        });
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container');
+    const notification = document.createElement('div');
+    notification.className = `notification alert-${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        ${message}
+        <button class="alert-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,678 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Kolekta{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="dashboard-header">
+        <div class="welcome-card glass-effect">
+            <div class="welcome-content">
+                <div class="welcome-text">
+                    <h1>Welcome back, {{ current_user.first_name or 'User' }}!</h1>
+                    <p>Ready to exchange cash with nearby users?</p>
+                </div>
+                <div class="welcome-actions">
+                    <a href="{{ url_for('request_exchange') }}" class="btn-primary">
+                        <i class="fas fa-plus-circle"></i>
+                        New Request
+                    </a>
+                    <a href="{{ url_for('find_exchanges') }}" class="glass-btn">
+                        <i class="fas fa-search"></i>
+                        Find Exchange
+                    </a>
+                </div>
+            </div>
+            <div class="welcome-stats">
+                <div class="stat-item">
+                    <div class="stat-number">{{ active_requests|length }}</div>
+                    <div class="stat-label">Active Requests</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ recent_matches|length }}</div>
+                    <div class="stat-label">Recent Matches</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ current_user.trust_score|round(1) }}</div>
+                    <div class="stat-label">Trust Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="actions-grid">
+            <a href="{{ url_for('request_exchange') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Request Exchange</h3>
+                    <p>Post what you have and what you need</p>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('find_exchanges') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-search-location"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Find Nearby</h3>
+                    <p>Browse exchange requests near you</p>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('matches') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <div class="action-content">
+                    <h3>My Matches</h3>
+                    <p>View your exchange matches</p>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('profile') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Profile</h3>
+                    <p>Update your information</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Active Requests -->
+    {% if active_requests %}
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2>Your Active Requests</h2>
+            <a href="{{ url_for('my_requests') }}" class="view-all-link">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="requests-grid">
+            {% for request in active_requests[:3] %}
+            <div class="exchange-card">
+                <div class="exchange-header">
+                    <div class="exchange-flow">
+                        <div class="exchange-item">
+                            <div class="exchange-amount">₱{{ "%.0f"|format(request.have_amount) }}</div>
+                            <div class="exchange-denomination">{{ request.have_denomination }}</div>
+                        </div>
+                        <div class="exchange-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="exchange-item">
+                            <div class="exchange-amount">₱{{ "%.0f"|format(request.want_amount) }}</div>
+                            <div class="exchange-denomination">{{ request.want_denomination }}</div>
+                        </div>
+                    </div>
+                    <div class="exchange-status status-{{ request.status }}">
+                        {{ request.status.title() }}
+                    </div>
+                </div>
+                
+                <div class="exchange-meta">
+                    <div class="exchange-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ request.exchange_location_name or 'Location set' }}
+                    </div>
+                    <div class="exchange-time">
+                        <i class="fas fa-clock"></i>
+                        {{ request.created_at.strftime('%m/%d %H:%M') }}
+                    </div>
+                </div>
+                
+                {% if request.notes %}
+                <div class="exchange-notes">
+                    <i class="fas fa-sticky-note"></i>
+                    {{ request.notes[:50] }}{% if request.notes|length > 50 %}...{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Matches -->
+    {% if recent_matches %}
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2>Recent Matches</h2>
+            <a href="{{ url_for('matches') }}" class="view-all-link">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="matches-list">
+            {% for match in recent_matches[:3] %}
+            <div class="match-card glass-effect">
+                <div class="match-header">
+                    <div class="match-user">
+                        {% if match.requester_id == current_user.id %}
+                            {% set other_user = match.provider %}
+                            <div class="user-avatar">
+                                {% if other_user.profile_image_url %}
+                                <img src="{{ other_user.profile_image_url }}" alt="{{ other_user.first_name }}">
+                                {% else %}
+                                <i class="fas fa-user"></i>
+                                {% endif %}
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">{{ other_user.first_name or 'User' }}</div>
+                                <div class="user-role">Provider</div>
+                            </div>
+                        {% else %}
+                            {% set other_user = match.requester %}
+                            <div class="user-avatar">
+                                {% if other_user.profile_image_url %}
+                                <img src="{{ other_user.profile_image_url }}" alt="{{ other_user.first_name }}">
+                                {% else %}
+                                <i class="fas fa-user"></i>
+                                {% endif %}
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">{{ other_user.first_name or 'User' }}</div>
+                                <div class="user-role">Requester</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="match-status status-{{ match.status }}">
+                        {{ match.status.title() }}
+                    </div>
+                </div>
+                
+                <div class="match-details">
+                    <div class="match-distance">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ "%.1f"|format(match.distance_km) }} km away
+                    </div>
+                    <div class="match-time">
+                        <i class="fas fa-clock"></i>
+                        {{ match.matched_at.strftime('%m/%d %H:%M') }}
+                    </div>
+                </div>
+                
+                <div class="match-actions">
+                    <a href="{{ url_for('match_detail', match_id=match.id) }}" class="glass-btn small">
+                        <i class="fas fa-eye"></i>
+                        View Details
+                    </a>
+                    {% if match.status == 'pending' and match.provider_id == current_user.id %}
+                    <form action="{{ url_for('confirm_match', match_id=match.id) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn-primary small">
+                            <i class="fas fa-check"></i>
+                            Confirm
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Notifications -->
+    {% if notifications %}
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2>Recent Notifications</h2>
+            <a href="{{ url_for('notifications') }}" class="view-all-link">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="notifications-list">
+            {% for notification in notifications[:5] %}
+            <div class="notification-item glass-effect">
+                <div class="notification-icon">
+                    {% if notification.type == 'match_found' %}
+                    <i class="fas fa-handshake"></i>
+                    {% elif notification.type == 'exchange_confirmed' %}
+                    <i class="fas fa-check-circle"></i>
+                    {% elif notification.type == 'exchange_completed' %}
+                    <i class="fas fa-star"></i>
+                    {% else %}
+                    <i class="fas fa-bell"></i>
+                    {% endif %}
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">{{ notification.title }}</div>
+                    <div class="notification-message">{{ notification.message }}</div>
+                    <div class="notification-time">{{ notification.created_at.strftime('%m/%d %H:%M') }}</div>
+                </div>
+                {% if not notification.is_read %}
+                <div class="notification-unread"></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Empty State -->
+    {% if not active_requests and not recent_matches %}
+    <div class="empty-state">
+        <div class="empty-state-content glass-effect">
+            <div class="empty-state-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <h3>Ready to start exchanging?</h3>
+            <p>Create your first exchange request or browse what others need nearby.</p>
+            <div class="empty-state-actions">
+                <a href="{{ url_for('request_exchange') }}" class="btn-primary">
+                    <i class="fas fa-plus-circle"></i>
+                    Create Request
+                </a>
+                <a href="{{ url_for('find_exchanges') }}" class="glass-btn">
+                    <i class="fas fa-search"></i>
+                    Browse Exchanges
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Dashboard specific styles */
+.dashboard-container {
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    margin-bottom: 3rem;
+}
+
+.welcome-card {
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.welcome-content {
+    flex: 1;
+}
+
+.welcome-text h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.welcome-text p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.welcome-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.quick-actions {
+    margin-bottom: 3rem;
+}
+
+.quick-actions h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: var(--transition);
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--border-radius-small);
+    background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.action-content h3 {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.action-content p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.dashboard-section {
+    margin-bottom: 3rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.view-all-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+
+.view-all-link:hover {
+    color: var(--light-blue);
+}
+
+.requests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.exchange-flow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.exchange-item {
+    text-align: center;
+}
+
+.exchange-notes {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-small);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.match-card {
+    padding: 1.5rem;
+}
+
+.match-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.match-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-avatar i {
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-role {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.match-details {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.match-distance,
+.match-time {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.match-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.glass-btn.small,
+.btn-primary.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.notification-item {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-blue);
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.notification-message {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.notification-time {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.notification-unread {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state-content {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 3rem;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: var(--accent-blue);
+    margin-bottom: 1.5rem;
+}
+
+.empty-state-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.empty-state-content p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.empty-state-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .welcome-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .welcome-stats {
+        justify-content: center;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .requests-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .match-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .match-actions {
+        flex-direction: column;
+    }
+    
+    .empty-state-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,889 @@
+{% extends "base.html" %}
+
+{% block title %}Find Exchanges - Kolekta{% endblock %}
+
+{% block head %}
+<!-- Leaflet CSS and JS for maps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="find-exchanges-container">
+    <!-- Header with filters -->
+    <div class="find-header">
+        <div class="header-content">
+            <h1><i class="fas fa-search-location"></i> Find Exchanges Nearby</h1>
+            <p>Discover exchange opportunities around you</p>
+        </div>
+        
+        <div class="view-toggle glass-effect">
+            <button class="toggle-btn active" data-view="list">
+                <i class="fas fa-list"></i> List
+            </button>
+            <button class="toggle-btn" data-view="map">
+                <i class="fas fa-map"></i> Map
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section glass-effect">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label class="filter-label">Radius</label>
+                <select id="radius-filter" class="form-control form-select">
+                    <option value="1">Within 1km</option>
+                    <option value="3">Within 3km</option>
+                    <option value="5" selected>Within 5km</option>
+                    <option value="10">Within 10km</option>
+                    <option value="25">Within 25km</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Looking For</label>
+                <select id="denomination-filter" class="form-control form-select">
+                    <option value="">Any denomination</option>
+                    <option value="1000">₱1000 Bills</option>
+                    <option value="500">₱500 Bills</option>
+                    <option value="200">₱200 Bills</option>
+                    <option value="100">₱100 Bills</option>
+                    <option value="50">₱50 Bills</option>
+                    <option value="20">₱20 Bills</option>
+                    <option value="10">₱10 Coins</option>
+                    <option value="5">₱5 Coins</option>
+                    <option value="1">₱1 Coins</option>
+                    <option value="coins">Mixed Coins</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Sort By</label>
+                <select id="sort-filter" class="form-control form-select">
+                    <option value="distance">Distance</option>
+                    <option value="amount">Amount</option>
+                    <option value="time">Newest</option>
+                    <option value="rating">User Rating</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <button id="refresh-btn" class="glass-btn">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location status -->
+    <div class="location-status" id="location-status">
+        <div class="status-content glass-effect">
+            <i class="fas fa-crosshairs"></i>
+            <span>Detecting your location...</span>
+            <button id="enable-location-btn" class="glass-btn small">Enable Location</button>
+        </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="content-area">
+        <!-- List View -->
+        <div class="list-view" id="list-view">
+            <div class="exchanges-list" id="exchanges-list">
+                <!-- Exchanges will be loaded here -->
+            </div>
+            
+            <!-- Empty state -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="empty-content glass-effect">
+                    <div class="empty-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>No exchanges found</h3>
+                    <p>Try expanding your search radius or create your own exchange request.</p>
+                    <a href="{{ url_for('request_exchange') }}" class="btn-primary">
+                        <i class="fas fa-plus-circle"></i>
+                        Create Request
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map View -->
+        <div class="map-view" id="map-view" style="display: none;">
+            <div class="map-container">
+                <div id="exchanges-map" class="exchanges-map"></div>
+            </div>
+            
+            <!-- Map legend -->
+            <div class="map-legend glass-effect">
+                <h4>Legend</h4>
+                <div class="legend-item">
+                    <div class="legend-marker bills"></div>
+                    <span>Bills (₱20+)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-marker coins"></div>
+                    <span>Coins & Small Bills</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-marker user"></div>
+                    <span>Your Location</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content glass-effect">
+            <div class="loading"></div>
+            <span>Finding exchanges...</span>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Find Exchanges Page Styles */
+.find-exchanges-container {
+    padding: 2rem 0;
+    min-height: 70vh;
+}
+
+.find-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-content p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.view-toggle {
+    display: flex;
+    border-radius: var(--border-radius-small);
+    overflow: hidden;
+    padding: 0.25rem;
+}
+
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--border-radius-small);
+}
+
+.toggle-btn:hover,
+.toggle-btn.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+}
+
+.filters-section {
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.location-status {
+    margin-bottom: 2rem;
+}
+
+.status-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+}
+
+.status-content i {
+    color: var(--accent-blue);
+}
+
+.status-content span {
+    flex: 1;
+    color: var(--text-secondary);
+}
+
+.glass-btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.content-area {
+    position: relative;
+    min-height: 400px;
+}
+
+.exchanges-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.exchange-item {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.exchange-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-blue), #FFD700);
+}
+
+.exchange-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+.exchange-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.exchange-flow {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.exchange-side {
+    text-align: center;
+}
+
+.exchange-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.exchange-denomination {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.exchange-arrow {
+    color: var(--accent-blue);
+    font-size: 1.5rem;
+}
+
+.exchange-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-details h4 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.user-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #FFD700;
+}
+
+.exchange-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.map-container {
+    height: 600px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.exchanges-map {
+    height: 100%;
+    width: 100%;
+}
+
+.map-legend {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 1rem;
+    min-width: 150px;
+}
+
+.map-legend h4 {
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.legend-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-marker.bills {
+    background: var(--accent-blue);
+}
+
+.legend-marker.coins {
+    background: #FFD700;
+}
+
+.legend-marker.user {
+    background: var(--success);
+}
+
+.empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+.empty-content {
+    text-align: center;
+    padding: 3rem;
+    max-width: 400px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--accent-blue);
+    margin-bottom: 1.5rem;
+}
+
+.empty-content h3 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.empty-content p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(27, 77, 184, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+}
+
+.loading-content span {
+    color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .find-header {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .exchange-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .exchange-flow {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .exchange-arrow {
+        transform: rotate(90deg);
+    }
+    
+    .exchange-meta {
+        grid-template-columns: 1fr;
+    }
+    
+    .exchange-actions {
+        flex-direction: column;
+    }
+    
+    .map-legend {
+        position: static;
+        margin-top: 1rem;
+    }
+}
+</style>
+
+<script>
+// Find Exchanges JavaScript
+let map;
+let markers = [];
+let userMarker;
+let userLocation = null;
+let currentExchanges = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializePage();
+    setupEventListeners();
+    checkUserLocation();
+    loadExchanges();
+});
+
+function initializePage() {
+    // Initialize map
+    map = L.map('exchanges-map').setView([14.5995, 120.9842], 11);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+}
+
+function setupEventListeners() {
+    // View toggle
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const view = btn.dataset.view;
+            switchView(view);
+        });
+    });
+    
+    // Filters
+    document.getElementById('radius-filter').addEventListener('change', loadExchanges);
+    document.getElementById('denomination-filter').addEventListener('change', loadExchanges);
+    document.getElementById('sort-filter').addEventListener('change', loadExchanges);
+    document.getElementById('refresh-btn').addEventListener('click', loadExchanges);
+    
+    // Location enable button
+    document.getElementById('enable-location-btn').addEventListener('click', requestLocation);
+}
+
+function switchView(view) {
+    // Update active button
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-view="${view}"]`).classList.add('active');
+    
+    // Switch views
+    if (view === 'map') {
+        document.getElementById('list-view').style.display = 'none';
+        document.getElementById('map-view').style.display = 'block';
+        
+        // Refresh map
+        setTimeout(() => {
+            map.invalidateSize();
+            if (userLocation) {
+                map.setView([userLocation.lat, userLocation.lng], 13);
+            }
+        }, 100);
+    } else {
+        document.getElementById('list-view').style.display = 'block';
+        document.getElementById('map-view').style.display = 'none';
+    }
+}
+
+function checkUserLocation() {
+    const locationStatus = document.getElementById('location-status');
+    const statusContent = locationStatus.querySelector('.status-content span');
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                
+                statusContent.textContent = 'Location detected successfully';
+                locationStatus.style.display = 'none';
+                
+                // Add user marker to map
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                
+                userMarker = L.marker([userLocation.lat, userLocation.lng], {
+                    icon: L.divIcon({
+                        className: 'user-location-marker',
+                        html: '<i class="fas fa-user"></i>',
+                        iconSize: [30, 30]
+                    })
+                }).addTo(map);
+                
+                map.setView([userLocation.lat, userLocation.lng], 13);
+                loadExchanges();
+            },
+            (error) => {
+                statusContent.textContent = 'Location access denied. Click to enable.';
+                console.error('Location error:', error);
+            }
+        );
+    } else {
+        statusContent.textContent = 'Geolocation not supported';
+    }
+}
+
+function requestLocation() {
+    checkUserLocation();
+}
+
+function loadExchanges() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    
+    if (!userLocation) {
+        loadingOverlay.style.display = 'none';
+        showEmptyState();
+        return;
+    }
+    
+    const radius = document.getElementById('radius-filter').value;
+    const denomination = document.getElementById('denomination-filter').value;
+    const sort = document.getElementById('sort-filter').value;
+    
+    const params = new URLSearchParams({
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        radius: radius
+    });
+    
+    if (denomination) params.append('denomination', denomination);
+    if (sort) params.append('sort', sort);
+    
+    fetch(`/api/nearby-requests?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            currentExchanges = data;
+            displayExchanges(data);
+            updateMap(data);
+            loadingOverlay.style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error loading exchanges:', error);
+            loadingOverlay.style.display = 'none';
+            showEmptyState();
+        });
+}
+
+function displayExchanges(exchanges) {
+    const exchangesList = document.getElementById('exchanges-list');
+    const emptyState = document.getElementById('empty-state');
+    
+    if (exchanges.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    exchangesList.innerHTML = exchanges.map(exchange => createExchangeCard(exchange)).join('');
+}
+
+function createExchangeCard(exchange) {
+    const denomText = {
+        '1000': '₱1000 bills',
+        '500': '₱500 bills',
+        '200': '₱200 bills',
+        '100': '₱100 bills',
+        '50': '₱50 bills',
+        '20': '₱20 bills',
+        '10': '₱10 coins',
+        '5': '₱5 coins',
+        '1': '₱1 coins',
+        'coins': 'mixed coins'
+    };
+    
+    return `
+        <div class="exchange-item">
+            <div class="exchange-header">
+                <div class="exchange-flow">
+                    <div class="exchange-side">
+                        <div class="exchange-amount">₱${exchange.have_amount}</div>
+                        <div class="exchange-denomination">${denomText[exchange.have_denomination] || exchange.have_denomination}</div>
+                    </div>
+                    <div class="exchange-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="exchange-side">
+                        <div class="exchange-amount">₱${exchange.want_amount}</div>
+                        <div class="exchange-denomination">${denomText[exchange.want_denomination] || exchange.want_denomination}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <h4>${exchange.user_name}</h4>
+                    <div class="user-rating">
+                        <i class="fas fa-star"></i>
+                        <span>4.8</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="exchange-meta">
+                <div class="meta-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>${exchange.distance}km away</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>${new Date(exchange.created_at).toLocaleTimeString()}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-map-signs"></i>
+                    <span>${exchange.location_name || 'Location set'}</span>
+                </div>
+            </div>
+            
+            <div class="exchange-actions">
+                <button class="btn-primary" onclick="initiateExchange(${exchange.id})">
+                    <i class="fas fa-handshake"></i>
+                    Request Exchange
+                </button>
+                <button class="glass-btn" onclick="showOnMap(${exchange.latitude}, ${exchange.longitude})">
+                    <i class="fas fa-map-marker-alt"></i>
+                    View on Map
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function updateMap(exchanges) {
+    // Clear existing markers
+    markers.forEach(marker => map.removeLayer(marker));
+    markers = [];
+    
+    // Add exchange markers
+    exchanges.forEach(exchange => {
+        const isDenomLarge = ['1000', '500', '200', '100'].includes(exchange.have_denomination);
+        const markerClass = isDenomLarge ? 'bills' : 'coins';
+        
+        const marker = L.marker([exchange.latitude, exchange.longitude], {
+            icon: L.divIcon({
+                className: `exchange-marker ${markerClass}`,
+                html: `<div class="marker-content">
+                    <i class="fas fa-coins"></i>
+                    <span>₱${exchange.have_amount}</span>
+                </div>`,
+                iconSize: [60, 40]
+            })
+        }).addTo(map);
+        
+        marker.bindPopup(`
+            <div class="marker-popup">
+                <h4>₱${exchange.have_amount} → ₱${exchange.want_amount}</h4>
+                <p>${exchange.user_name} • ${exchange.distance}km away</p>
+                <button onclick="initiateExchange(${exchange.id})" class="btn-primary small">
+                    Request Exchange
+                </button>
+            </div>
+        `);
+        
+        markers.push(marker);
+    });
+}
+
+function showOnMap(lat, lng) {
+    switchView('map');
+    map.setView([lat, lng], 16);
+    
+    // Find and open the popup for this location
+    markers.forEach(marker => {
+        const markerPos = marker.getLatLng();
+        if (Math.abs(markerPos.lat - lat) < 0.0001 && Math.abs(markerPos.lng - lng) < 0.0001) {
+            marker.openPopup();
+        }
+    });
+}
+
+function showEmptyState() {
+    document.getElementById('exchanges-list').innerHTML = '';
+    document.getElementById('empty-state').style.display = 'flex';
+}
+
+function initiateExchange(exchangeId) {
+    // This would typically open a modal or redirect to exchange details
+    window.kolektaApp.showNotification('Exchange request sent!', 'success');
+    
+    // In a real implementation, you'd make an API call here
+    console.log('Initiating exchange with ID:', exchangeId);
+}
+
+// Add custom CSS for map markers
+const markerCSS = `
+.exchange-marker {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.exchange-marker.bills {
+    background: rgba(59, 130, 246, 0.8);
+}
+
+.exchange-marker.coins {
+    background: rgba(255, 215, 0, 0.8);
+}
+
+.marker-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.user-location-marker {
+    background: var(--success);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.marker-popup h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.marker-popup p {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+`;
+
+const style = document.createElement('style');
+style.textContent = markerCSS;
+document.head.appendChild(style);
+</script>
+{% endblock %}
