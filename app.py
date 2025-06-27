@@ -25,10 +25,13 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
 }
 
-db = SQLAlchemy(app, model_class=Base)
+db = SQLAlchemy(model_class=Base)
+# initialize the app with the extension, flask-sqlalchemy >= 3.0.x
+db.init_app(app)
 
-# Create tables
 with app.app_context():
+    # Make sure to import the models here or their tables won't be created
     import models  # noqa: F401
+    import simple_routes  # noqa: F401
     db.create_all()
     logging.info("Database tables created")
