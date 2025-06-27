@@ -13,12 +13,15 @@ def get_current_user():
         if user:
             return {
                 'id': user.id,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'email': user.email,
-                'trust_score': user.trust_score,
-                'profile_image_url': user.profile_image_url
+                'first_name': getattr(user, 'first_name', ''),
+                'last_name': getattr(user, 'last_name', ''),
+                'email': getattr(user, 'email', ''),
+                'trust_score': getattr(user, 'trust_score', 5.0),
+                'profile_image_url': getattr(user, 'profile_image_url', None)
             }
+        else:
+            # User session exists but user not found in Firestore, clear session
+            session.pop('user_id', None)
     return None
 
 # Firebase authentication
@@ -61,8 +64,14 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
+    session.clear()  # Clear all session data
     flash('Logged out successfully', 'info')
+    return redirect(url_for('index'))
+
+@app.route('/clear-session')
+def clear_session():
+    """Clear session data if there are authentication issues"""
+    session.clear()
     return redirect(url_for('index'))
 
 @app.route('/')
